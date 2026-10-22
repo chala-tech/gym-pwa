@@ -7,16 +7,33 @@ const checkInRoutes = require('./routes/checkIns');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS – reads CLIENT_URL from Render environment variables.
-// Falls back to localhost for local development.
-const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
+// CORS – whitelist of allowed origins.
+// Always includes the production Vercel URL and localhost.
+// Add more via CLIENT_URL env var on Render (comma-separated for multiple).
+const ALLOWED_ORIGINS = new Set([
+  'https://gym-pwa-kappa-blond.vercel.app', // production Vercel URL
+  'http://localhost:5173',                   // local dev
+  'http://localhost:4173',                   // vite preview
+  ...(process.env.CLIENT_URL
+    ? process.env.CLIENT_URL.split(',').map((o) => o.trim())
+    : []),
+]);
+
 app.use(
   cors({
-    origin: allowedOrigin,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (curl, Postman, server-to-server)
+      if (!origin || ALLOWED_ORIGINS.has(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin '${origin}' not allowed`));
+      }
+    },
     credentials: true,
   })
 );
 app.use(express.json());
+
 
 
 // Routes

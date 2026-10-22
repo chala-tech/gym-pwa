@@ -15,7 +15,10 @@ export function useMembers() {
       const { data } = await getMembers(query);
       setMembers(data);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load members');
+      // Safely coerce to string — if the server returns {code, message} or any
+      // non-string, rendering it as JSX directly causes React Error #31.
+      const raw = err.response?.data?.error ?? err.response?.data?.message ?? err.message;
+      setError(typeof raw === 'string' ? raw : 'Failed to load members. Please try again.');
     } finally {
       setLoading(false);
     }

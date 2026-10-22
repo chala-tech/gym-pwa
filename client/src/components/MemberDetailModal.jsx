@@ -72,15 +72,15 @@ export default function MemberDetailModal({ member: initialMember, onClose, onUp
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Sheet */}
-      <div className="relative w-full sm:max-w-md animate-slide-up">
-        <div className="bg-[#1e293b] rounded-t-3xl sm:rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+      {/* Sheet — capped to 92% of the dynamic viewport so browser chrome never hides the header */}
+      <div className="relative w-full sm:max-w-md animate-slide-up max-h-[92dvh] flex flex-col">
+        <div className="bg-[#1e293b] rounded-t-3xl sm:rounded-2xl border border-white/10 shadow-2xl flex flex-col min-h-0">
 
-          {/* Colour accent bar */}
-          <div className={`h-1 w-full bg-gradient-to-r ${bar}`} />
+          {/* Colour accent bar — never scrolls */}
+          <div className={`h-1 w-full bg-gradient-to-r ${bar} flex-shrink-0 rounded-t-3xl sm:rounded-t-2xl`} />
 
-          {/* Header */}
-          <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-white/8">
+          {/* Header — never scrolls */}
+          <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-white/8 flex-shrink-0">
             <div className="flex items-center gap-3 min-w-0">
               {/* Avatar */}
               <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center flex-shrink-0">
@@ -109,83 +109,87 @@ export default function MemberDetailModal({ member: initialMember, onClose, onUp
             </button>
           </div>
 
-          {/* Info grid */}
-          <div className="px-6 pt-5 pb-4 space-y-4">
+          {/* Scrollable body */}
+          <div className="overflow-y-auto flex-1">
 
-            {/* Days left — hero number */}
-            <div className={`rounded-2xl border p-4 text-center ${expired ? 'bg-red-500/8 border-red-500/20' : 'bg-indigo-500/8 border-indigo-500/20'}`}>
-              <p className="text-xs text-slate-400 font-medium uppercase tracking-widest mb-1">
-                {expired ? 'Expired' : 'Days Remaining'}
-              </p>
-              <p className={`text-5xl font-black leading-none ${expired ? 'text-red-400' : days <= 7 ? 'text-amber-400' : 'text-indigo-300'}`}>
-                {expired ? Math.abs(days) : days}
-              </p>
-              <p className="text-xs text-slate-500 mt-1">
-                {expired ? `days ago` : `days left`}
-              </p>
+            {/* Info grid */}
+            <div className="px-6 pt-5 pb-4 space-y-4">
+
+              {/* Days left — hero number */}
+              <div className={`rounded-2xl border p-4 text-center ${expired ? 'bg-red-500/8 border-red-500/20' : 'bg-indigo-500/8 border-indigo-500/20'}`}>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-widest mb-1">
+                  {expired ? 'Expired' : 'Days Remaining'}
+                </p>
+                <p className={`text-5xl font-black leading-none ${expired ? 'text-red-400' : days <= 7 ? 'text-amber-400' : 'text-indigo-300'}`}>
+                  {expired ? Math.abs(days) : days}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {expired ? `days ago` : `days left`}
+                </p>
+              </div>
+
+              {/* Detail rows */}
+              <div className="space-y-3">
+                <DetailRow icon={Phone} label="Phone Number" value={member.phoneNumber} />
+                <DetailRow icon={Calendar} label="Date Registered" value={formatDate(member.joinDate)} />
+                <DetailRow icon={Clock} label="Expiration Date" value={formatDate(member.expirationDate)} />
+              </div>
             </div>
 
-            {/* Detail rows */}
-            <div className="space-y-3">
-              <DetailRow icon={Phone} label="Phone Number" value={member.phoneNumber} />
-              <DetailRow icon={Calendar} label="Date Registered" value={formatDate(member.joinDate)} />
-              <DetailRow icon={Clock} label="Expiration Date" value={formatDate(member.expirationDate)} />
+            {/* Renew section */}
+            <div className="px-6 pb-4 border-t border-white/8 pt-4 space-y-3">
+              <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Renew Membership</p>
+
+              {/* Duration pills */}
+              <div className="flex flex-wrap gap-2">
+                {DURATION_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setRenewMonths(opt.value)}
+                    id={`duration-${opt.value}`}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-150 ${
+                      renewMonths === opt.value
+                        ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-900/40'
+                        : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                id={`renew-member-${member.id}`}
+                onClick={handleRenew}
+                disabled={renewing}
+                className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] text-sm"
+              >
+                {renewing ? <Loader2 size={16} className="animate-spin" /> : <RotateCcw size={16} />}
+                {renewing ? 'Renewing…' : `Renew · ${DURATION_OPTIONS.find(o => o.value === renewMonths)?.label}`}
+              </button>
             </div>
-          </div>
 
-          {/* Renew section */}
-          <div className="px-6 pb-4 border-t border-white/8 pt-4 space-y-3">
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Renew Membership</p>
-
-            {/* Duration pills */}
-            <div className="flex flex-wrap gap-2">
-              {DURATION_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setRenewMonths(opt.value)}
-                  id={`duration-${opt.value}`}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-150 ${
-                    renewMonths === opt.value
-                      ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-900/40'
-                      : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            {/* Delete */}
+            <div className="px-6 pb-6">
+              <button
+                id={`delete-member-${member.id}`}
+                onClick={handleDelete}
+                disabled={deleting}
+                className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 border ${
+                  confirmDelete
+                    ? 'bg-red-600 border-red-500 text-white hover:bg-red-500'
+                    : 'bg-transparent border-white/10 text-red-400 hover:bg-red-500/10'
+                }`}
+              >
+                {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                {deleting ? 'Removing…' : confirmDelete ? 'Tap again to confirm delete' : 'Remove Member'}
+              </button>
             </div>
 
-            <button
-              id={`renew-member-${member.id}`}
-              onClick={handleRenew}
-              disabled={renewing}
-              className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] text-sm"
-            >
-              {renewing ? <Loader2 size={16} className="animate-spin" /> : <RotateCcw size={16} />}
-              {renewing ? 'Renewing…' : `Renew · ${DURATION_OPTIONS.find(o => o.value === renewMonths)?.label}`}
-            </button>
-          </div>
-
-          {/* Delete */}
-          <div className="px-6 pb-6">
-            <button
-              id={`delete-member-${member.id}`}
-              onClick={handleDelete}
-              disabled={deleting}
-              className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 border ${
-                confirmDelete
-                  ? 'bg-red-600 border-red-500 text-white hover:bg-red-500'
-                  : 'bg-transparent border-white/10 text-red-400 hover:bg-red-500/10'
-              }`}
-            >
-              {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
-              {deleting ? 'Removing…' : confirmDelete ? 'Tap again to confirm delete' : 'Remove Member'}
-            </button>
+            {/* Safe area padding for mobile */}
+            <div className="h-safe-area-bottom bg-[#1e293b] sm:hidden" />
           </div>
         </div>
-
-        {/* Safe area padding for mobile */}
-        <div className="h-safe-area-bottom bg-[#1e293b] sm:hidden" />
       </div>
     </div>
   );

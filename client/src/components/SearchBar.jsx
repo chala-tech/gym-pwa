@@ -9,10 +9,11 @@ export default function SearchBar({ value, onChange }) {
       />
       <input
         id="member-search"
-        type="search"
+        type="text"
+        inputMode="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Search by name or phone…"
+        placeholder="Search by name or 09… / 07…"
         autoComplete="off"
         autoCorrect="off"
         spellCheck="false"

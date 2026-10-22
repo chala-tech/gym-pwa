@@ -16,13 +16,23 @@ export default function AddMemberModal({ onClose, onSuccess }) {
   const [loading, setLoading]   = useState(false);
   const [errors, setErrors]     = useState({});
 
+  const PHONE_RE = /^(\+251|251)?[07]\d{8}$|^(09|07)\d{8}$/;
+
+  // Mirror the backend normalizePhone: strip +251/251 → local 0XXXXXXXXX
+  const normalizePhone = (raw) => {
+    const s = raw.trim().replace(/\s+/g, '');
+    if (s.startsWith('+251')) return '0' + s.slice(4);
+    if (/^251\d{9}$/.test(s))  return '0' + s.slice(3);
+    return s;
+  };
+
   const validate = () => {
     const errs = {};
     if (!form.fullName.trim()) errs.fullName = 'Full name is required';
     if (!form.phoneNumber.trim()) {
       errs.phoneNumber = 'Phone number is required';
-    } else if (!/^(09|07)\d{8}$/.test(form.phoneNumber.trim())) {
-      errs.phoneNumber = 'Enter a valid Ethiopian number (09xxxxxxxx or 07xxxxxxxx)';
+    } else if (!PHONE_RE.test(form.phoneNumber.trim())) {
+      errs.phoneNumber = 'Enter a valid Ethiopian number (09xxxxxxxx, 07xxxxxxxx, or +251xxxxxxxx)';
     }
     return errs;
   };
@@ -35,7 +45,7 @@ export default function AddMemberModal({ onClose, onSuccess }) {
     try {
       await createMember({
         fullName:       form.fullName.trim(),
-        phoneNumber:    form.phoneNumber.trim(),
+        phoneNumber:    normalizePhone(form.phoneNumber),   // always send as 09.../07...
         durationMonths: form.durationMonths,
       });
       toast.success(`${form.fullName.trim()} registered! 🎉`);

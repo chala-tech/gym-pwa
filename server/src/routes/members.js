@@ -2,19 +2,27 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../lib/prisma');
 
+// Helper: calculate expiration date from today (or from base date) + N months
+function addMonths(baseDate, months) {
+  const d = new Date(baseDate);
+  d.setMonth(d.getMonth() + months);
+  return d;
+}
+
 // POST /api/members - Create a new member
 router.post('/', async (req, res) => {
   try {
-    const { fullName, phoneNumber } = req.body;
+    const { fullName, phoneNumber, durationMonths } = req.body;
 
     if (!fullName || !phoneNumber) {
       return res.status(400).json({ error: 'fullName and phoneNumber are required' });
     }
 
+    // durationMonths defaults to 1 if not provided or invalid
+    const months = Math.max(1, parseInt(durationMonths) || 1);
+
     const joinDate = new Date();
-    // Default membership: 30 days from today
-    const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() + 30);
+    const expirationDate = addMonths(joinDate, months);
 
     const member = await prisma.member.create({
       data: {
@@ -35,7 +43,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/members - List all members, with optional search by name or phone
+// GET /api/members - List all members, optional search by name or phone
 router.get('/', async (req, res) => {
   try {
     const { q } = req.query;
@@ -52,9 +60,6 @@ router.get('/', async (req, res) => {
     const members = await prisma.member.findMany({
       where,
       orderBy: { fullName: 'asc' },
-      include: {
-        _count: { select: { checkIns: true } },
-      },
     });
 
     res.json(members);
@@ -64,19 +69,13 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/members/:id - Get a single member with their check-in history
+// GET /api/members/:id - Get a single member
 router.get('/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: 'Invalid member ID' });
 
-    const member = await prisma.member.findUnique({
-      where: { id },
-      include: {
-        checkIns: { orderBy: { timestamp: 'desc' }, take: 10 },
-        _count: { select: { checkIns: true } },
-      },
-    });
+    const member = await prisma.member.findUnique({ where: { id } });
 
     if (!member) return res.status(404).json({ error: 'Member not found' });
 
@@ -87,22 +86,24 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// PATCH /api/members/:id/renew - Renew membership by 30 days
+// PATCH /api/members/:id/renew - Renew membership by N months (default 1)
 router.patch('/:id/renew', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: 'Invalid member ID' });
 
+    const months = Math.max(1, parseInt(req.body.durationMonths) || 1);
+
     const existing = await prisma.member.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ error: 'Member not found' });
 
     // If already expired, extend from today; otherwise extend from current expiration
-    const baseDate = new Date(existing.expirationDate) < new Date()
-      ? new Date()
-      : new Date(existing.expirationDate);
+    const baseDate =
+      new Date(existing.expirationDate) < new Date()
+        ? new Date()
+        : new Date(existing.expirationDate);
 
-    const newExpiration = new Date(baseDate);
-    newExpiration.setDate(newExpiration.getDate() + 30);
+    const newExpiration = addMonths(baseDate, months);
 
     const member = await prisma.member.update({
       where: { id },

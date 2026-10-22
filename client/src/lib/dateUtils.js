@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow, isPast, isWithinInterval, addDays } from 'date-fns';
+import { format, formatDistanceToNow, isPast, isWithinInterval, addDays, differenceInDays } from 'date-fns';
 
 /**
  * Returns membership status: 'active' | 'expiring' | 'expired'
@@ -30,4 +30,12 @@ export function formatDate(date) {
 
 export function formatDateTime(date) {
   return format(new Date(date), 'MMM d, yyyy • h:mm a');
+}
+
+/**
+ * Returns days remaining until expiration.
+ * Negative means already expired by that many days.
+ */
+export function daysLeft(expirationDate) {
+  return differenceInDays(new Date(expirationDate), new Date());
 }

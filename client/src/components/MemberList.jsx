@@ -13,10 +13,6 @@ function SkeletonCard() {
         <div className="h-6 w-20 bg-white/5 rounded-full" />
       </div>
       <div className="mt-3 h-3 bg-white/5 rounded-lg w-2/3 mx-1" />
-      <div className="flex gap-2.5 mt-4">
-        <div className="flex-1 h-9 bg-white/5 rounded-xl" />
-        <div className="w-20 h-9 bg-white/5 rounded-xl" />
-      </div>
     </div>
   );
 }
@@ -67,7 +63,7 @@ function ErrorState({ error, onRetry }) {
   );
 }
 
-export default function MemberList({ members, loading, error, searchQuery, onUpdate, onRetry }) {
+export default function MemberList({ members, loading, error, searchQuery, onSelect, onRetry }) {
   if (error) {
     return <ErrorState error={error} onRetry={onRetry} />;
   }
@@ -85,10 +81,7 @@ export default function MemberList({ members, loading, error, searchQuery, onUpd
   }
 
   // Summary stats
-  const active = members.filter(m => {
-    const exp = new Date(m.expirationDate);
-    return exp > new Date();
-  }).length;
+  const active  = members.filter(m => new Date(m.expirationDate) > new Date()).length;
   const expired = members.length - active;
 
   return (
@@ -110,7 +103,7 @@ export default function MemberList({ members, loading, error, searchQuery, onUpd
 
       <div className="space-y-3">
         {members.map((member) => (
-          <MemberCard key={member.id} member={member} onUpdate={onUpdate} />
+          <MemberCard key={member.id} member={member} onSelect={onSelect} />
         ))}
       </div>
     </div>

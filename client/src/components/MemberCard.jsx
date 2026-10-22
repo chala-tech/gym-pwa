@@ -1,8 +1,5 @@
-import { useState } from 'react';
-import { Phone, Calendar, CheckCircle2, Clock, AlertCircle, Loader2, RotateCcw, Dumbbell } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { CheckCircle2, Clock, AlertCircle, Phone, Calendar } from 'lucide-react';
 import { getMembershipStatus, formatExpiry, formatDate } from '../lib/dateUtils';
-import { checkIn, renewMember } from '../lib/api';
 
 const statusConfig = {
   active: {
@@ -11,6 +8,7 @@ const statusConfig = {
     dot: 'bg-emerald-400',
     icon: CheckCircle2,
     cardBorder: 'border-emerald-500/20',
+    bar: 'from-emerald-500 to-teal-400',
   },
   expiring: {
     label: 'Expiring Soon',
@@ -18,6 +16,7 @@ const statusConfig = {
     dot: 'bg-amber-400',
     icon: Clock,
     cardBorder: 'border-amber-500/20',
+    bar: 'from-amber-500 to-orange-400',
   },
   expired: {
     label: 'Expired',
@@ -25,60 +24,26 @@ const statusConfig = {
     dot: 'bg-red-500',
     icon: AlertCircle,
     cardBorder: 'border-red-500/20',
+    bar: 'from-red-500 to-rose-400',
   },
 };
 
-export default function MemberCard({ member, onUpdate }) {
-  const [checkingIn, setCheckingIn] = useState(false);
-  const [renewing, setRenewing] = useState(false);
-
+export default function MemberCard({ member, onSelect }) {
   const status = getMembershipStatus(member.expirationDate);
   const config = statusConfig[status];
   const StatusIcon = config.icon;
 
-  const handleCheckIn = async () => {
-    if (checkingIn) return;
-    setCheckingIn(true);
-    try {
-      await checkIn(member.id);
-      toast.success(`✅ ${member.fullName} checked in!`);
-      onUpdate?.();
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Check-in failed');
-    } finally {
-      setCheckingIn(false);
-    }
-  };
-
-  const handleRenew = async () => {
-    if (renewing) return;
-    setRenewing(true);
-    try {
-      await renewMember(member.id);
-      toast.success(`🔄 Membership renewed for ${member.fullName}!`);
-      onUpdate?.();
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Renewal failed');
-    } finally {
-      setRenewing(false);
-    }
-  };
-
   return (
     <article
-      className={`relative bg-[#1e293b] rounded-2xl border ${config.cardBorder} overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5`}
-      aria-label={`Member: ${member.fullName}`}
+      onClick={() => onSelect(member)}
+      className={`relative bg-[#1e293b] rounded-2xl border ${config.cardBorder} overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5 cursor-pointer active:scale-[0.98]`}
+      aria-label={`View details for ${member.fullName}`}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onSelect(member)}
     >
       {/* Top accent bar */}
-      <div
-        className={`absolute top-0 left-0 right-0 h-0.5 ${
-          status === 'active'
-            ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
-            : status === 'expiring'
-            ? 'bg-gradient-to-r from-amber-500 to-orange-400'
-            : 'bg-gradient-to-r from-red-500 to-rose-400'
-        }`}
-      />
+      <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${config.bar}`} />
 
       <div className="p-4">
         {/* Header row */}
@@ -102,15 +67,13 @@ export default function MemberCard({ member, onUpdate }) {
           </div>
 
           {/* Status badge */}
-          <div
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium flex-shrink-0 ${config.badge}`}
-          >
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium flex-shrink-0 ${config.badge}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${config.dot} flex-shrink-0`} />
             {config.label}
           </div>
         </div>
 
-        {/* Expiry info */}
+        {/* Expiry + joined */}
         <div className="flex items-center gap-1.5 mt-3 px-1">
           <Calendar size={12} className="text-slate-500 flex-shrink-0" />
           <span className="text-slate-400 text-xs">{formatExpiry(member.expirationDate)}</span>
@@ -118,46 +81,8 @@ export default function MemberCard({ member, onUpdate }) {
           <span className="text-slate-500 text-xs">Joined {formatDate(member.joinDate)}</span>
         </div>
 
-        {/* Check-in count */}
-        {member._count?.checkIns !== undefined && (
-          <div className="flex items-center gap-1.5 mt-1 px-1">
-            <Dumbbell size={12} className="text-slate-500 flex-shrink-0" />
-            <span className="text-slate-500 text-xs">{member._count.checkIns} check-in{member._count.checkIns !== 1 ? 's' : ''}</span>
-          </div>
-        )}
-
-        {/* Action buttons */}
-        <div className="flex gap-2.5 mt-4">
-          <button
-            id={`checkin-btn-${member.id}`}
-            onClick={handleCheckIn}
-            disabled={checkingIn}
-            className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold py-2.5 rounded-xl transition-all duration-150 active:scale-[0.97]"
-            aria-label={`Check in ${member.fullName}`}
-          >
-            {checkingIn ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <CheckCircle2 size={14} />
-            )}
-            {checkingIn ? 'Logging...' : 'Check In'}
-          </button>
-
-          <button
-            id={`renew-btn-${member.id}`}
-            onClick={handleRenew}
-            disabled={renewing}
-            className="flex items-center justify-center gap-2 bg-white/8 hover:bg-white/14 disabled:opacity-60 disabled:cursor-not-allowed text-slate-300 hover:text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all duration-150 border border-white/10 active:scale-[0.97]"
-            aria-label={`Renew ${member.fullName}'s membership`}
-          >
-            {renewing ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <RotateCcw size={14} />
-            )}
-            {renewing ? '...' : 'Renew'}
-          </button>
-        </div>
+        {/* Tap hint */}
+        <p className="text-[10px] text-slate-600 mt-2.5 px-1 font-medium">Tap to view details & renew →</p>
       </div>
     </article>
   );

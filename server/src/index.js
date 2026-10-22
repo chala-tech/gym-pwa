@@ -2,18 +2,17 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const memberRoutes = require('./routes/members');
-const checkInRoutes = require('./routes/checkIns');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // CORS – whitelist of allowed origins.
 // Always includes the production Vercel URL and localhost.
-// Add more via CLIENT_URL env var on Render (comma-separated for multiple).
+// Add more via CLIENT_URL env var on Render (comma-separated).
 const ALLOWED_ORIGINS = new Set([
-  'https://gym-pwa-kappa-blond.vercel.app', // production Vercel URL
-  'http://localhost:5173',                   // local dev
-  'http://localhost:4173',                   // vite preview
+  'https://gym-pwa-kappa-blond.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:4173',
   ...(process.env.CLIENT_URL
     ? process.env.CLIENT_URL.split(',').map((o) => o.trim())
     : []),
@@ -22,7 +21,6 @@ const ALLOWED_ORIGINS = new Set([
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (curl, Postman, server-to-server)
       if (!origin || ALLOWED_ORIGINS.has(origin)) {
         callback(null, true);
       } else {
@@ -34,11 +32,8 @@ app.use(
 );
 app.use(express.json());
 
-
-
 // Routes
 app.use('/api/members', memberRoutes);
-app.use('/api/checkins', checkInRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

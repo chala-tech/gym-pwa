@@ -3,32 +3,34 @@ import { Dumbbell, Wifi, WifiOff } from 'lucide-react';
 import SearchBar from './components/SearchBar';
 import MemberList from './components/MemberList';
 import AddMemberModal from './components/AddMemberModal';
+import MemberDetailModal from './components/MemberDetailModal';
 import FAB from './components/FAB';
 import { useMembers } from './hooks/useMembers';
 
 function useOnlineStatus() {
   const [online, setOnline] = useState(navigator.onLine);
   useEffect(() => {
-    const goOnline = () => setOnline(true);
+    const goOnline  = () => setOnline(true);
     const goOffline = () => setOnline(false);
-    window.addEventListener('online', goOnline);
+    window.addEventListener('online',  goOnline);
     window.addEventListener('offline', goOffline);
-    // Cleanup: remove listeners when the component unmounts
     return () => {
-      window.removeEventListener('online', goOnline);
+      window.removeEventListener('online',  goOnline);
       window.removeEventListener('offline', goOffline);
     };
-  }, []); // empty deps → runs once on mount only
+  }, []);
   return online;
 }
 
 export default function App() {
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddModal, setShowAddModal]       = useState(false);
+  const [selectedMember, setSelectedMember]   = useState(null);
   const { members, loading, error, searchQuery, setSearchQuery, refresh } = useMembers();
   const online = useOnlineStatus();
 
   return (
     <div className="min-h-dvh bg-[#0f172a] flex flex-col max-w-lg mx-auto">
+
       {/* ── Sticky Header ── */}
       <header className="sticky top-0 z-30 bg-[#0f172a]/90 backdrop-blur-xl border-b border-white/5">
         {/* Offline banner */}
@@ -56,13 +58,11 @@ export default function App() {
               </div>
             </div>
 
-            {/* Online dot */}
+            {/* Online indicator */}
             <div className="flex items-center gap-1.5">
-              {online ? (
-                <Wifi size={14} className="text-emerald-400" />
-              ) : (
-                <WifiOff size={14} className="text-amber-400" />
-              )}
+              {online
+                ? <Wifi size={14} className="text-emerald-400" />
+                : <WifiOff size={14} className="text-amber-400" />}
               <span className={`text-xs font-medium ${online ? 'text-emerald-400' : 'text-amber-400'}`}>
                 {online ? 'Live' : 'Offline'}
               </span>
@@ -81,7 +81,7 @@ export default function App() {
           loading={loading}
           error={error}
           searchQuery={searchQuery}
-          onUpdate={refresh}
+          onSelect={setSelectedMember}
           onRetry={refresh}
         />
       </main>
@@ -94,6 +94,15 @@ export default function App() {
         <AddMemberModal
           onClose={() => setShowAddModal(false)}
           onSuccess={refresh}
+        />
+      )}
+
+      {/* ── Member Detail Modal ── */}
+      {selectedMember && (
+        <MemberDetailModal
+          member={selectedMember}
+          onClose={() => setSelectedMember(null)}
+          onUpdate={() => { refresh(); setSelectedMember(null); }}
         />
       )}
     </div>

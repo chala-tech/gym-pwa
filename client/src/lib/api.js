@@ -1,9 +1,14 @@
 import axios from 'axios';
 
-// In production (Vercel), VITE_API_URL is set to the full Render backend URL.
-// In local dev, it falls back to '/api' which Vite's dev proxy forwards to localhost:5000.
+// import.meta.env.PROD is a Vite built-in: true during `vite build`, false during `vite dev`.
+// This means NO environment variables need to be set anywhere — Vite bakes the correct
+// URL into the bundle at build time automatically.
+const BASE_URL = import.meta.env.PROD
+  ? 'https://gym-pwa-ua65.onrender.com/api'  // production → Render backend
+  : '/api';                                    // local dev  → Vite proxy → localhost:5000
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 });
 

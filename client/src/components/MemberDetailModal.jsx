@@ -72,12 +72,17 @@ export default function MemberDetailModal({ member: initialMember, onClose, onUp
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Sheet — capped to 92% of the dynamic viewport so browser chrome never hides the header */}
-      <div className="relative w-full sm:max-w-md animate-slide-up max-h-[92dvh] flex flex-col">
-        <div className="bg-[#1e293b] rounded-t-3xl sm:rounded-2xl border border-white/10 shadow-2xl flex flex-col min-h-0">
+      {/* Sheet — fixed 92dvh on mobile so it always fills from near the top like a native drawer */}
+      <div className="relative w-full sm:max-w-md animate-slide-up h-[92dvh] sm:h-auto sm:max-h-[90dvh] flex flex-col">
+        <div className="bg-[#1e293b] rounded-t-3xl sm:rounded-2xl border border-white/10 shadow-2xl flex flex-col min-h-0 h-full">
 
           {/* Colour accent bar — never scrolls */}
           <div className={`h-1 w-full bg-gradient-to-r ${bar} flex-shrink-0 rounded-t-3xl sm:rounded-t-2xl`} />
+
+          {/* Drag handle pill — native bottom-sheet feel */}
+          <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+            <div className="w-10 h-1 rounded-full bg-white/20" />
+          </div>
 
           {/* Header — never scrolls */}
           <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-white/8 flex-shrink-0">

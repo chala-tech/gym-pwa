@@ -7,9 +7,17 @@ const checkInRoutes = require('./routes/checkIns');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
+// CORS – reads CLIENT_URL from Render environment variables.
+// Falls back to localhost for local development.
+const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
+app.use(
+  cors({
+    origin: allowedOrigin,
+    credentials: true,
+  })
+);
 app.use(express.json());
+
 
 // Routes
 app.use('/api/members', memberRoutes);
@@ -27,7 +35,7 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🏋️  Gym API Server running on http://localhost:${PORT}`);
+  console.log(`🏋️  Gym API Server running on port ${PORT}`);
 });
 
 module.exports = app;

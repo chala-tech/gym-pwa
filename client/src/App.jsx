@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dumbbell, Wifi, WifiOff } from 'lucide-react';
 import SearchBar from './components/SearchBar';
 import MemberList from './components/MemberList';
@@ -8,8 +8,17 @@ import { useMembers } from './hooks/useMembers';
 
 function useOnlineStatus() {
   const [online, setOnline] = useState(navigator.onLine);
-  window.addEventListener('online', () => setOnline(true));
-  window.addEventListener('offline', () => setOnline(false));
+  useEffect(() => {
+    const goOnline = () => setOnline(true);
+    const goOffline = () => setOnline(false);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    // Cleanup: remove listeners when the component unmounts
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []); // empty deps → runs once on mount only
   return online;
 }
 
